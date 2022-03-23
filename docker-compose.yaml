@@ -1,0 +1,75 @@
+version: "3.8"
+services:
+   bunker:
+     image: bunkerity/bunkerized-nginx
+     restart: always
+     volumes: 
+       - ./server-confs:/server-confs:ro
+     environment:
+# Ensemble des endpoints pour lequel il générera des certificats
+      - SERVER_NAME=doodle.diverse-team.fr pad.diverse-team.fr phpmyadmin.diverse-team.fr
+      - SERVE_FILES=yes
+      - DISABLE_DEFAULT_SERVER=no
+# Transmission de l'IP publique vers les containers
+      - PROXY_REAL_IP=yes
+#      - MAX_CLIENT_SIZE=100m
+#      - USE_ANTIBOT=captcha
+# Configuration de letencrypt
+      - AUTO_LETS_ENCRYPT=no
+# redirect du 80 vers 443 automatique
+      - REDIRECT_HTTP_TO_HTTPS=yes
+      - USE_LIMIT_REQ=no
+# Désactivation http2
+      - HTTP2=no
+# Paramétrage des entêtes http
+      - FEATURE_POLICY=accelerometer 'none'; ambient-light-sensor 'none'; autoplay 'none'; camera 'none'; display-capture 'none'; document-domain 'none'; encrypted-media 'none'; fullscreen 'none'; geolocation 'none'; gyroscope 'none'; magnetometer 'none'; microphone 'none'; midi 'none'; payment 'none'; picture-in-picture 'none'; speaker 'none'; sync-xhr 'self'; usb 'none'; vibrate 'none'; vr 'none'
+   myadmin:
+     image: phpmyadmin
+#    ports:
+#      - "8082:80"  
+     restart: always 
+     environment:
+    # pour phpmyadmin url externe
+      - PMA_ABSOLUTE_URI=https://phpmyadmin.diverse-team.fr
+#    myadmin:
+#      image: phpmyadmin/phpmyadmin
+#      ports:
+#        - "8082:8082"
+   front:
+     container_name: tlc_front
+     build: ./front
+     ports: 
+        - "90:80"
+     restart: always
+     depends_on:
+       - "server"
+   db:
+     image: mysql
+     ports:
+        - "3306:3306"
+     environment:
+        - MYSQL_ROOT_PASSWORD=root
+        - MYSQL_DATABASE=tlc
+        - MYSQL_USER=tlc
+        - MYSQL_PASSWORD=tlc
+     restart: always
+     expose:
+        - "3306"
+   etherpad:
+     image: etherpad/etherpad:1.8
+     ports:
+        - "9001:9001"
+     volumes:
+        - ./api/APIKEY.txt:/opt/etherpad-lite/APIKEY.txt
+     restart: always
+   server:
+     container_name: tlc_server
+     build: ./api
+     restart: always
+     ports:
+        - "8080"
+     depends_on:
+       - "db"
+   mail:
+     image: bytemark/smtp
+     restart: always
