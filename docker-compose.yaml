@@ -1,57 +1,51 @@
 version: "3.8"
 services:
-
-   myadmin:
-     image: phpmyadmin
-#    ports:
-#      - "8082:80"  
-     restart: always 
-     environment:
-    # pour phpmyadmin url externe
-      - PMA_ABSOLUTE_URI=https://phpmyadmin.diverse-team.fr
-#    myadmin:
-#      image: phpmyadmin/phpmyadmin
-#      ports:
-#        - "8082:8082"
-   front:
-     container_name: tlc_front
-     build: ./front
-     ports: 
-      - "8081"
-     restart: always
-     depends_on:
-       - "server"
-     volumes:
-       - server-confs/api.confs
-   db:
-     image: mysql
-     ports:
-        - "3306:3306"
-     environment:
-        - MYSQL_ROOT_PASSWORD=root
-        - MYSQL_DATABASE=tlc
-        - MYSQL_USER=tlc
-        - MYSQL_PASSWORD=tlc
-     restart: always
-     expose:
-        - "3306"
-   etherpad:
-     image: etherpad/etherpad:1.8
-     ports:
-        - "9001:9001"
-     volumes:
-        - ./api/APIKEY.txt:/opt/etherpad-lite/APIKEY.txt
-     restart: always
    server:
-     container_name: backend
-     build: ./api/src/main/docker/Dockerfile.jvm
-     restart: always
-     ports:
-        - "8080"
-     environment:
-        - quarkus.datasource.jdbc.url=jdbc:mysql://db:3306/tlc?useUnicode=true&serverTimezone=Europe/Paris
-     depends_on:
-       - "db"
+      container_name: backend
+      build:
+         context: .
+         dockerfile: api/src/main/docker/Dockerfile.jvm
+      restart: always
+      ports:
+         - "8080"
+      environment:
+         - quarkus.datasource.jdbc.url=jdbc:mysql://db:3306/tlc?useUnicode=true&serverTimezone=Europe/Paris
+      depends_on:
+         - "db"
+
+   front:
+      container_name: tlc_front
+      build: ./front
+      ports: 
+         - "8081"
+      restart: always
+      depends_on:
+         - "server"
+      volumes:
+         - server-confs/api.confs
+
+   db:
+      image: mysql
+      ports:
+         - "3306:3306"
+      environment:
+         - MYSQL_ROOT_PASSWORD=root
+         - MYSQL_DATABASE=tlc
+         - MYSQL_USER=tlc
+         - MYSQL_PASSWORD=tlc
+      restart: always
+      expose:
+         - "3306"
+
+   etherpad:
+      image: etherpad/etherpad:1.8
+      ports:
+         - "9001:9001"
+      volumes:
+         - ./api/APIKEY.txt:/opt/etherpad-lite/APIKEY.txt
+      restart: always
+
+
    mail:
-     image: bytemark/smtp
-     restart: always
+      image: bytemark/smtp
+      restart: always
